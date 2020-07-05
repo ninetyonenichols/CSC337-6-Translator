@@ -10,20 +10,22 @@ const http = require('http');
 const host = '127.0.0.1';
 const port = 5000;
 
+function buildTranslations() {
+}
+
 const server = http.createServer((req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/plain');
+  buildTranslations();
   var parts = req.url.split('/');
-  var languages = {
-    "e":"english",
-    "g":"german",
-    "s":"spanish",
-  }
+  var languages = new Set(["e", "g", "s"]);
 
   if (parts.length == 4 && parts[1] == 'translate' && parts[2].length == 3
-        && parts[2][0] in languages && parts[2][2] in languages
-        && parts[2][0] != parts[2][2]) {
-    var translation = "asdf";
+      && languages.has(parts[2][0]) && languages.has(parts[2][2])
+      && parts[2][0] != parts[2][2]) {
+    var original = parts[3].split('+');
+    var translation = "";
+    original.forEach(item => translation += item + " ");
     res.end(translation);
   } else {
     res.end('Invalid request.');
