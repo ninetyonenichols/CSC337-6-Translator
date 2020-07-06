@@ -6,17 +6,51 @@
  */
 
 const http = require('http');
+const fs = require('fs');
+const readline = require('readline');
 
 const host = '127.0.0.1';
 const port = 5000;
 
-function buildTranslations() {
+e2g = {};
+e2s = {};
+g2e = {};
+g2s = {};
+s2e = {};
+s2g = {};
+
+/*
+ * This function builds the dictionaries that will store translation info.
+ */
+async function buildTranslations(fname) {
+    const filestream = fs.createReadStream(fname);
+    const rl = readline.createInterface({
+        input: filestream,
+        clrfDelay: Infinity,
+    });
+    for await (const line of rl){
+        if (line.startsWith('#')) { continue; }
+        let words = line.split('\t');
+        if (words.length < 2) { continue; }
+        var eng = words[0];
+        var foreign = words[1].split('\s')[0];
+        e2s[eng] = foreign;
+    }
+}
+
+/*
+ * This function translates a string.
+ */
+function translate(original) {
+    var translation = "";
+    original.forEach(item => translation += e2s[item] + ' ');
+    return translation;
 }
 
 const server = http.createServer((req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/plain');
-  buildTranslations();
+  buildTranslations(fname='./src_data/spanish.txt');
   var parts = req.url.split('/');
   var languages = new Set(["e", "g", "s"]);
 
@@ -24,8 +58,7 @@ const server = http.createServer((req, res) => {
       && languages.has(parts[2][0]) && languages.has(parts[2][2])
       && parts[2][0] != parts[2][2]) {
     var original = parts[3].split('+');
-    var translation = "";
-    original.forEach(item => translation += item + " ");
+    var translation = translate(original);
     res.end(translation);
   } else {
     res.end('Invalid request.');
